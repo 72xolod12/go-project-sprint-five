@@ -63,10 +63,10 @@ func TrainingInfo(data string, weight, height float64) (string, error) {
 	var calories float64
 	switch trainingType {
 
-	case "running":
+	case "running", "Бег":
 		calories, err = RunningSpentCalories(steps, weight, height, duration)
 
-	case "walking":
+	case "walking", "Ходьба":
 		calories, err = WalkingSpentCalories(steps, weight, height, duration)
 
 	default:
