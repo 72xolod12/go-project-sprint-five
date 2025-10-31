@@ -85,16 +85,39 @@ func RunningSpentCalories(steps int, weight, height float64, duration time.Durat
 		return 0, errors.New("duration cannot be zero or negative")
 	}
 
-	avgSpeed := meanSpeed(steps, height, duration)
+	if steps <= 0 {
+		return 0, errors.New("steps cannot be zero or negative")
+	}
 
+	if weight <= 0 {
+		return 0, errors.New("weight cannot be zero or negative")
+	}
+
+	if height <= 0 {
+		return 0, errors.New("height cannot be zero or negative")
+	}
+	avgSpeed := meanSpeed(steps, height, duration)
 	calories := (weight * 18 * avgSpeed) / mInKm * duration.Minutes() * walkingCaloriesCoefficient
 	return calories, nil
 }
 
 func WalkingSpentCalories(steps int, weight, height float64, duration time.Duration) (float64, error) {
-	if len(duration.String()) == 0 || duration.Hours() == 0 {
-		return 0, errors.New("duration cannot be zero")
+	if steps <= 0 {
+		return 0, errors.New("steps cannot be zero or negative")
 	}
+
+	if weight <= 0 {
+		return 0, errors.New("weight cannot be zero or negative")
+	}
+
+	if height <= 0 {
+		return 0, errors.New("height cannot be zero or negative")
+	}
+
+	if duration.Hours() <= 0 {
+		return 0, errors.New("duration cannot be zero or negative")
+	}
+
 	avgSpeed := meanSpeed(steps, height, duration)
 	calories := (0.035 * weight) + ((avgSpeed*avgSpeed)/height)*0.029*weight*duration.Minutes()
 	caloriesTotal := calories * walkingCaloriesCoefficient
