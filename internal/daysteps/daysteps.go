@@ -20,6 +20,7 @@ func parsePackage(data string) (int, time.Duration, error) {
 	if len(parts) != 2 {
 		return 0, 0, fmt.Errorf("invalid data format")
 	}
+
 	steps, err := strconv.Atoi(strings.TrimSpace(parts[0]))
 	if err != nil {
 		return 0, 0, fmt.Errorf("invalid steps value: %w", err)
@@ -27,11 +28,17 @@ func parsePackage(data string) (int, time.Duration, error) {
 	if steps < 0 {
 		return 0, 0, errors.New("steps cannot be negative")
 	}
+
 	durationStr := strings.TrimSpace(parts[1])
 	duration, err := time.ParseDuration(durationStr)
 	if err != nil {
 		return 0, 0, fmt.Errorf("invalid duration value: %w", err)
 	}
+
+	if duration < 0 {
+		return 0, 0, errors.New("duration cannot be negative")
+	}
+
 	return steps, duration, nil
 }
 
