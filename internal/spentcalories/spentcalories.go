@@ -50,7 +50,6 @@ func parseTraining(data string) (int, string, time.Duration, error) {
 	return steps, trainingType, duration, nil
 }
 
-// distance: длина шага = height * stepLengthCoefficient (в метрах), итоговая дистанция в километрах
 func distance(steps int, height float64) float64 {
 	stepDistance := height * stepLengthCoefficient // метров
 	stepTotalDistance := float64(steps) * stepDistance
@@ -62,7 +61,10 @@ func meanSpeed(steps int, height float64, duration time.Duration) float64 {
 		return 0
 	}
 	distanceKm := distance(steps, height)
-	return distanceKm / duration.Hours()
+
+	speed := distanceKm / duration.Hours()
+
+	return speed
 }
 
 func TrainingInfo(data string, weight, height float64) (string, error) {
@@ -132,7 +134,12 @@ func WalkingSpentCalories(steps int, weight, height float64, duration time.Durat
 	}
 
 	avgSpeed := meanSpeed(steps, height, duration)
+
 	calories := (weight * avgSpeed * duration.Minutes()) / minInH
+
 	calories *= walkingCaloriesCoefficient
+	s := fmt.Sprintf("%.2f", calories)
+	calories, _ = strconv.ParseFloat(s, 64)
+
 	return calories, nil
 }
