@@ -4,14 +4,13 @@ import (
 	"errors"
 	"fmt"
 	"log"
-	"regexp"
 	"strconv"
 	"strings"
 	"time"
 )
 
 const (
-	lenStep                    = 0.65 // средняя длина шага
+	lenStep                    = 0.65 // средняя длина шага (м)
 	mInKm                      = 1000 // метров в километре
 	minInH                     = 60   // минут в часе
 	stepLengthCoefficient      = 0.45 // коэффициент длины шага от роста
@@ -19,56 +18,41 @@ const (
 )
 
 func parseTraining(data string) (int, string, time.Duration, error) {
+
 	parts := strings.Split(data, ",")
 	if len(parts) != 3 {
 		return 0, "", 0, fmt.Errorf("invalid data format")
 	}
 
-	steps, err := strconv.Atoi(strings.TrimSpace(parts[0]))
+	stepsStr := parts[0]
+	trType := parts[1]
+	durationStr := parts[2]
+
+	if stepsStr != strings.TrimSpace(stepsStr) || trType != strings.TrimSpace(trType) || durationStr != strings.TrimSpace(durationStr) {
+		return 0, "", 0, fmt.Errorf("invalid spacing in input")
+	}
+
+	steps, err := strconv.Atoi(stepsStr)
 	if err != nil {
 		return 0, "", 0, fmt.Errorf("invalid steps value: %w", err)
 	}
 	if steps <= 0 {
-		return 0, "", 0, errors.New("steps cannot be negative or zero")
+		return 0, "", 0, errors.New("steps must be positive")
 	}
 
-	trainingType := strings.TrimSpace(parts[1])
-	durationStr := strings.TrimSpace(parts[2])
-
-	matched, _ := regexp.MatchString(`\d+\s+[hm]`, durationStr)
-	if matched {
-		return 0, "", 0, errors.New("invalid duration format: spaces are not allowed")
+	if trType == "" {
+		return 0, "", 0, errors.New("training type is required")
 	}
 
 	duration, err := time.ParseDuration(durationStr)
 	if err != nil {
-
-		hours := 0.0
-		minutes := 0.0
-		if strings.Contains(durationStr, "-") {
-			return 0, "", 0, errors.New("duration cannot be neagtive")
-		}
-		if strings.Contains(durationStr, "h") {
-			partsH := strings.Split(durationStr, "h")
-			hours, _ = strconv.ParseFloat(partsH[0], 64)
-			if len(partsH) > 1 && strings.Contains(partsH[1], "m") {
-				minStr := strings.TrimSuffix(partsH[1], "m")
-				if minStr != "" {
-					minutes, _ = strconv.ParseFloat(minStr, 64)
-				}
-			}
-		} else if strings.Contains(durationStr, "m") {
-			minStr := strings.TrimSuffix(durationStr, "m")
-			minutes, _ = strconv.ParseFloat(minStr, 64)
-		}
-		duration = time.Duration(hours*float64(time.Hour) + minutes*float64(time.Minute))
+		return 0, "", 0, fmt.Errorf("invalid duration value: %w", err)
 	}
-
 	if duration <= 0 {
 		return 0, "", 0, errors.New("duration must be positive")
 	}
 
-	return steps, trainingType, duration, nil
+	return steps, trType, duration, nil
 }
 
 // meanSpeed — средняя скорость (км/ч)
@@ -94,15 +78,16 @@ func TrainingInfo(data string, weight, height float64) (string, error) {
 		log.Println(err)
 		return "", fmt.Errorf("error parsing data: %v", err)
 	}
-	if steps == 0 {
+
+	if steps <= 0 {
 		return "", fmt.Errorf("no steps recorded")
 	}
 
 	var calories float64
-	switch trainingType {
-	case "running", "Бег":
+	switch strings.ToLower(trainingType) {
+	case "running", "бег":
 		calories, err = RunningSpentCalories(steps, weight, height, duration)
-	case "walking", "Ходьба":
+	case "walking", "ходьба":
 		calories, err = WalkingSpentCalories(steps, weight, height, duration)
 	default:
 		return "", fmt.Errorf("неизвестный тип тренировки: %s", trainingType)
@@ -137,6 +122,7 @@ func RunningSpentCalories(steps int, weight, height float64, duration time.Durat
 	}
 
 	avgSpeed := meanSpeed(steps, height, duration)
+
 	calories := (weight * avgSpeed * duration.Minutes()) / minInH
 	return calories, nil
 }
@@ -160,4 +146,17 @@ func WalkingSpentCalories(steps int, weight, height float64, duration time.Durat
 	calories := (weight * avgSpeed * duration.Minutes()) / minInH
 	calories *= walkingCaloriesCoefficient
 	return calories, nil
+}
+
+func DayActionInfo(data string, weight, height float64) string {
+
+	steps, _, duration, err := parseTraining(data)
+	if err != nil {
+		log.Printf("Error: %v", err)
+		return ""
+	}
+	distanceKm := float64(steps) * lenStep / mInKm
+
+	calories := (0.035 * weight) + ((distanceKm / duration.Hours()) * (0.029 * weight * 1000 / height))
+	return fmt.Sprintf("Количество шагов: %d\nДистанция: %.2f км\nВы сожгли: %.2f ккал\n", steps, distanceKm, calories)
 }
