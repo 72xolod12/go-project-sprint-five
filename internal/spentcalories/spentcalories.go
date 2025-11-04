@@ -11,8 +11,8 @@ import (
 
 const (
 	lenStep                    = 0.65
-	mInKm                      = 1000.0
-	minInH                     = 60.0
+	mInKm                      = 1000
+	minInH                     = 60
 	stepLengthCoefficient      = 0.45
 	walkingCaloriesCoefficient = 0.5
 )
@@ -33,10 +33,6 @@ func parseTraining(data string) (int, string, time.Duration, error) {
 	}
 	if steps <= 0 {
 		return 0, "", 0, errors.New("steps must be positive")
-	}
-
-	if strings.Contains(durationStr, " h") || strings.Contains(durationStr, " m") {
-		return 0, "", 0, fmt.Errorf("invalid duration format: space between number and unit")
 	}
 
 	duration, err := time.ParseDuration(durationStr)
@@ -80,9 +76,9 @@ func TrainingInfo(data string, weight, height float64) (string, error) {
 
 	var calories float64
 	switch trainingType {
-	case "running", "Бег":
+	case "Бег":
 		calories, err = RunningSpentCalories(steps, weight, height, duration)
-	case "walking", "Ходьба":
+	case "Ходьба":
 		calories, err = WalkingSpentCalories(steps, weight, height, duration)
 	default:
 		return "", fmt.Errorf("неизвестный тип тренировки: %s", trainingType)
@@ -129,17 +125,15 @@ func WalkingSpentCalories(steps int, weight, height float64, duration time.Durat
 	if height <= 0 {
 		return 0, errors.New("height cannot be zero or negative")
 	}
-	if duration.Hours() <= 0 {
+	if duration <= 0 {
 		return 0, errors.New("duration cannot be zero or negative")
 	}
 
 	avgSpeed := meanSpeed(steps, height, duration)
 
-	calories := (weight * avgSpeed * duration.Minutes()) / minInH
+	calories := weight * avgSpeed * duration.Hours()
 
 	calories *= walkingCaloriesCoefficient
-	s := fmt.Sprintf("%.2f", calories)
-	calories, _ = strconv.ParseFloat(s, 64)
 
 	return calories, nil
 }

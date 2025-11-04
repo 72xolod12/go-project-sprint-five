@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"log"
-	"math"
 	"strconv"
 	"strings"
 	"time"
@@ -32,14 +31,22 @@ func parsePackage(data string) (int, time.Duration, error) {
 	}
 
 	steps, err := strconv.Atoi(parts[0])
-	if err != nil || steps <= 0 {
-		return 0, 0, errors.New("invalid steps")
+	if err != nil {
+		return 0, 0, fmt.Errorf("invalid steps value: %v", err)
+	}
+
+	if steps <= 0 {
+		return 0, 0, errors.New("steps must be positive")
 	}
 
 	durationStr := strings.TrimSpace(parts[1])
 	duration, err := time.ParseDuration(durationStr)
-	if err != nil || duration <= 0 {
-		return 0, 0, errors.New("invalid duration")
+	if err != nil {
+		return 0, 0, fmt.Errorf("invalid duration value: %v", err)
+	}
+
+	if duration <= 0 {
+		return 0, 0, errors.New("duration must be positive")
 	}
 
 	return steps, duration, nil
@@ -47,9 +54,16 @@ func parsePackage(data string) (int, time.Duration, error) {
 
 func DayActionInfo(data string, weight, height float64) string {
 	steps, duration, err := parsePackage(data)
-	if err != nil || steps <= 0 || duration <= 0 {
-		log.Printf("Ошибка при разборе данных: %v", err)
-		return ""
+	if err != nil {
+		log.Printf("Error processing data: %v", err)
+	}
+
+	if steps <= 0 {
+		log.Println("Steps must be positive")
+	}
+
+	if duration <= 0 {
+		log.Println("Duration must be positive")
 	}
 
 	distance := float64(steps) * stepLength / mInKm
@@ -58,8 +72,6 @@ func DayActionInfo(data string, weight, height float64) string {
 		log.Printf("Ошибка при обработке данных: %v", err)
 		return ""
 	}
-
-	calories = math.Round(calories*100) / 100
 
 	return fmt.Sprintf(
 		"Количество шагов: %d.\nДистанция составила %.2f км.\nВы сожгли %.2f ккал.\n",
